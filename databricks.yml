@@ -1,0 +1,22 @@
+bundle:
+  name: lakehouse-ingestor
+
+resources:
+  jobs:
+    ingestion_job:
+      name: "Automated_Ingestion_Job"
+      tasks:
+        - task_key: run_main_script
+          job_cluster_key: shared_cluster
+          spark_python_task:
+            python_file: ./scripts/ingest_data.py
+      job_clusters:
+        - job_cluster_key: shared_cluster
+          new_cluster:
+            spark_version: 14.3.x-scala2.12
+            node_type_id: Standard_DS3_v2
+            num_workers: 1
+
+targets:
+  dev:
+    mode: development

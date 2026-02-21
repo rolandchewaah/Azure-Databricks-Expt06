@@ -1,0 +1,6 @@
+# ps-rule.yaml
+include:
+  module:
+    - PSRule.Rules.Azure
+configuration:
+  AZURE_STORAGE_HTTPS_ONLY: true

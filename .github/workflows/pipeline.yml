@@ -1,0 +1,55 @@
+# .github/workflows/pipeline.yml
+name: DataOps Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: PS-Rule Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run PS-Rule
+        uses: microsoft/ps-rule-azure@main
+
+  deploy:
+    name: Deploy to Azure & Databricks
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Log in to Azure
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Deploy Bicep (Infrastructure)
+      - name: Deploy Infrastructure
+        uses: azure/arm-deploy@v1
+        with:
+          resourceGroupName: rg-data-ingestion
+          template: ./infra/main.bicep
+
+      # Setup and Deploy Databricks Bundle
+      - name: Setup Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Bundle Deploy
+        run: databricks bundle deploy -t dev --force
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+      - name: Trigger Ingestion
+        run: databricks bundle run ingestion_job -t dev
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
