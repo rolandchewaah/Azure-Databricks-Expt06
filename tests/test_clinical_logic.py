@@ -1,19 +1,16 @@
 import pytest
-from pyspark.sql import SparkSession
 from src.clinical_logic import apply_clinical_rules
 
-@pytest.fixture(scope="session")
-def spark():
-    return SparkSession.builder.master("local[1]").appName("PharmaTests").getOrCreate()
-
-def test_dosage_conversion(spark):
-    # Create dummy data: 1 gram dosage
-    data = [{"patient_id": "P001", "dosage": 1}]
+@pytest.mark.parametrize("input_g, expected_mg", [
+    (1, 1000),    # Normal case
+    (0.5, 500),   # Decimal case
+    (0, 0),       # Edge case
+])
+def test_dosage_conversion_multi(spark, input_g, expected_mg):
+    data = [{"patient_id": "P001", "dosage": input_g}]
     df = spark.createDataFrame(data)
     
-    # Apply logic
     result_df = apply_clinical_rules(df)
     actual_dosage = result_df.collect()[0]["dosage_mg"]
     
-    # Assert
-    assert actual_dosage == 1000
+    assert actual_dosage == expected_mg
