@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: pip install pytest pyspark
       - name: Run Unit Tests
-        run: pytest tests/
+        run: python -m pytest tests/
 
   lint:
     name: PS-Rule Validation
