@@ -1,4 +1,3 @@
-# .github/workflows/pipeline.yml
 name: DataOps Pipeline
 
 on:
@@ -6,6 +5,19 @@ on:
     branches: [ main ]
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install pytest pyspark
+      - name: Run Unit Tests
+        run: pytest tests/
+
   lint:
     name: PS-Rule Validation
     runs-on: ubuntu-latest
@@ -16,7 +28,7 @@ jobs:
 
   deploy:
     name: Deploy to Azure & Databricks
-    needs: lint
+    needs: [test, lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
